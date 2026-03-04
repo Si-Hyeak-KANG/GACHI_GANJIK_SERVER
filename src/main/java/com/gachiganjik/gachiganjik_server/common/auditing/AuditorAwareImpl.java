@@ -3,6 +3,7 @@ package com.gachiganjik.gachiganjik_server.common.auditing;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -19,7 +20,7 @@ public class AuditorAwareImpl implements AuditorAware<Long> {
             return Optional.empty();
         }
 
-        // Phase 1에서 UserDetails 구현 후 실제 userId로 교체
-        return Optional.empty();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        return Optional.of(Long.parseLong(userDetails.getUsername()));
     }
 }
