@@ -35,7 +35,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST,
-                                "/api/v1/auth/register",
+                                "/api/v1/auth/signup",
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/token/refresh",
                                 "/api/v1/auth/social/google",

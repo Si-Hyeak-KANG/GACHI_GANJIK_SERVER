@@ -23,6 +23,12 @@ repositories {
     mavenCentral()
 }
 
+dependencyManagement {
+    imports {
+        mavenBom 'me.paulschwarz:spring-dotenv-bom:5.1.0'
+    }
+}
+
 dependencies {
     // Web
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -52,7 +58,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     // dotenv
-    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+    implementation 'me.paulschwarz:springboot4-dotenv'
 
     // DevTools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'

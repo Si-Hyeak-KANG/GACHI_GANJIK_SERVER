@@ -23,7 +23,7 @@ public class AuthController {
     private final AuthService authService;
     private final GoogleAuthService googleAuthService;
 
-    @PostMapping("/register")
+    @PostMapping("/signup")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(authService.register(request)));
