@@ -50,4 +50,8 @@ public class UserLoginInfo extends BaseEntity {
         this.providerId = providerId;
         this.status = UserStatus.ACTIVE;
     }
+
+    public void updatePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+    }
 }

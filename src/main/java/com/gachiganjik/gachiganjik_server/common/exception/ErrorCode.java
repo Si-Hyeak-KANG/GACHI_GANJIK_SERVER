@@ -20,6 +20,8 @@ public enum ErrorCode {
     // 사용자
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다."),
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "EMAIL_ALREADY_EXISTS", "이미 사용 중인 이메일입니다."),
+    WEAK_PASSWORD(HttpStatus.UNPROCESSABLE_ENTITY, "WEAK_PASSWORD", "비밀번호 정책을 충족하지 않습니다."),
+    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "INVALID_FILE_TYPE", "지원하지 않는 파일 형식입니다."),
 
     // 앨범
     ALBUM_NOT_FOUND(HttpStatus.NOT_FOUND, "ALBUM_NOT_FOUND", "앨범을 찾을 수 없습니다."),
