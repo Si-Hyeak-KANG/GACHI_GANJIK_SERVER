@@ -1,10 +1,14 @@
 spring:
+  sql:
+    init:
+      mode: always
   datasource:
     url: jdbc:mysql://localhost:3306/GACHI_GANJIK_DB?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: update
     show-sql: true

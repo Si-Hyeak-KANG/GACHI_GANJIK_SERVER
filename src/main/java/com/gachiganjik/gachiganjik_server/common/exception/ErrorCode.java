@@ -27,6 +27,12 @@ public enum ErrorCode {
     ALBUM_NOT_FOUND(HttpStatus.NOT_FOUND, "ALBUM_NOT_FOUND", "앨범을 찾을 수 없습니다."),
     INVITE_CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "INVITE_CODE_NOT_FOUND", "유효하지 않은 초대 코드입니다."),
     ALREADY_ALBUM_MEMBER(HttpStatus.CONFLICT, "ALREADY_ALBUM_MEMBER", "이미 앨범 멤버입니다."),
+    NOT_ALBUM_MEMBER(HttpStatus.FORBIDDEN, "NOT_ALBUM_MEMBER", "앨범 멤버가 아닙니다."),
+    PERMISSION_DENIED(HttpStatus.FORBIDDEN, "PERMISSION_DENIED", "권한이 없습니다."),
+    ALBUM_LIMIT_EXCEEDED(HttpStatus.FORBIDDEN, "ALBUM_LIMIT_EXCEEDED", "앨범은 최대 8개까지 생성할 수 있습니다."),
+    INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "INVALID_DATE_RANGE", "종료일은 시작일 이후여야 합니다."),
+    INVALID_INVITE_CODE(HttpStatus.NOT_FOUND, "INVALID_INVITE_CODE", "유효하지 않은 초대 코드입니다."),
+    ALREADY_JOINED(HttpStatus.CONFLICT, "ALREADY_JOINED", "이미 참여한 앨범입니다."),
 
     // GUEST
     GUEST_KEY_ALREADY_EXISTS(HttpStatus.CONFLICT, "GUEST_KEY_ALREADY_EXISTS", "이미 사용 중인 GUEST ID입니다."),
