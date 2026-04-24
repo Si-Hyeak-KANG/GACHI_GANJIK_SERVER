@@ -21,11 +21,11 @@ public class ApiResponse<T> {
         return new ApiResponse<>(true, data, null);
     }
 
-    public static ApiResponse<?> success() {
+    public static <T> ApiResponse<T> success() {
         return new ApiResponse<>(true, null, null);
     }
 
-    public static ApiResponse<?> fail(ErrorDetail error) {
+    public static <T> ApiResponse<T> fail(ErrorDetail error) {
         return new ApiResponse<>(false, null, error);
     }
 }

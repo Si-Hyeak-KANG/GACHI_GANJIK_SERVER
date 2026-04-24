@@ -41,6 +41,9 @@ public enum ErrorCode {
 
     // 사진
     PHOTO_NOT_FOUND(HttpStatus.NOT_FOUND, "PHOTO_NOT_FOUND", "사진을 찾을 수 없습니다."),
+    FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "FILE_SIZE_EXCEEDED", "파일 크기 제한을 초과했습니다."),
+    TOO_MANY_FILES(HttpStatus.BAD_REQUEST, "TOO_MANY_FILES", "한 번에 최대 10장까지 업로드할 수 있습니다."),
+    NOT_PHOTO_OWNER(HttpStatus.FORBIDDEN, "NOT_PHOTO_OWNER", "사진 업로더만 수정할 수 있습니다."),
 
     // 댓글
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT_NOT_FOUND", "댓글을 찾을 수 없습니다.");
