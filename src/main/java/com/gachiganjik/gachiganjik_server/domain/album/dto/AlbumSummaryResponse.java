@@ -21,7 +21,7 @@ public record AlbumSummaryResponse(
         String createdAt,
         String updatedAt
 ) {
-    public static AlbumSummaryResponse of(Album album, AlbumRole role, int memberCount) {
+    public static AlbumSummaryResponse of(Album album, AlbumRole role, int memberCount, int photoCount) {
         List<String> categoryNames = album.getAlbumCategories().stream()
                 .map(ac -> ac.getCategory().getCategoryName())
                 .toList();
@@ -35,7 +35,7 @@ public record AlbumSummaryResponse(
                 album.getCoverImageUrl(),
                 album.getInviteCode(),
                 role.name(),
-                0,
+                photoCount,
                 memberCount,
                 album.getCreatedDt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                 album.getUpdatedDt() != null ? album.getUpdatedDt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null

@@ -31,7 +31,7 @@ public record AlbumDetailResponse(
             String joinedAt
     ) {}
 
-    public static AlbumDetailResponse of(Album album, AlbumRole myRole, List<AlbumMember> members) {
+    public static AlbumDetailResponse of(Album album, AlbumRole myRole, List<AlbumMember> members, int photoCount) {
         List<String> categoryNames = album.getAlbumCategories().stream()
                 .map(ac -> ac.getCategory().getCategoryName())
                 .toList();
@@ -57,7 +57,7 @@ public record AlbumDetailResponse(
                 album.getCoverImageUrl(),
                 album.getInviteCode(),
                 myRole.name(),
-                0,
+                photoCount,
                 memberInfos.size(),
                 memberInfos,
                 album.getCreatedDt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),

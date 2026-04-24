@@ -5,6 +5,8 @@ import com.gachiganjik.gachiganjik_server.common.exception.ErrorCode;
 import com.gachiganjik.gachiganjik_server.domain.album.dto.*;
 import com.gachiganjik.gachiganjik_server.domain.album.entity.*;
 import com.gachiganjik.gachiganjik_server.domain.album.repository.*;
+import com.gachiganjik.gachiganjik_server.domain.photo.entity.PhotoStatus;
+import com.gachiganjik.gachiganjik_server.domain.photo.repository.PhotoRepository;
 import com.gachiganjik.gachiganjik_server.domain.user.entity.UserInfo;
 import com.gachiganjik.gachiganjik_server.domain.user.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ public class AlbumService {
     private final AlbumCategoryRepository albumCategoryRepository;
     private final CategoryRepository categoryRepository;
     private final UserInfoRepository userInfoRepository;
+    private final PhotoRepository photoRepository;
 
     public List<AlbumSummaryResponse> getMyAlbums(Long userId) {
         List<AlbumMember> myMemberships = albumMemberRepository.findActiveByUserId(userId);
@@ -38,7 +41,9 @@ public class AlbumService {
                 .map(am -> {
                     int memberCount = albumMemberRepository
                             .findByAlbumAndStatus(am.getAlbum(), AlbumMemberStatus.ACTIVE).size();
-                    return AlbumSummaryResponse.of(am.getAlbum(), am.getRole(), memberCount);
+                    int photoCount = photoRepository.countByAlbumAndStatus(
+                            am.getAlbum().getAlbumId(), PhotoStatus.ACTIVE);
+                    return AlbumSummaryResponse.of(am.getAlbum(), am.getRole(), memberCount, photoCount);
                 })
                 .toList();
     }
@@ -79,7 +84,8 @@ public class AlbumService {
         Album album = findActiveAlbum(albumId);
         AlbumMember myMember = findActiveMember(album, findUser(userId));
         List<AlbumMember> members = albumMemberRepository.findByAlbumAndStatus(album, AlbumMemberStatus.ACTIVE);
-        return AlbumDetailResponse.of(album, myMember.getRole(), members);
+        int photoCount = photoRepository.countByAlbumAndStatus(albumId, PhotoStatus.ACTIVE);
+        return AlbumDetailResponse.of(album, myMember.getRole(), members, photoCount);
     }
 
     @Transactional
@@ -105,7 +111,8 @@ public class AlbumService {
         }
 
         int memberCount = albumMemberRepository.findByAlbumAndStatus(album, AlbumMemberStatus.ACTIVE).size();
-        return AlbumSummaryResponse.of(album, myMember.getRole(), memberCount);
+        int photoCount = photoRepository.countByAlbumAndStatus(album.getAlbumId(), PhotoStatus.ACTIVE);
+        return AlbumSummaryResponse.of(album, myMember.getRole(), memberCount, photoCount);
     }
 
     @Transactional
