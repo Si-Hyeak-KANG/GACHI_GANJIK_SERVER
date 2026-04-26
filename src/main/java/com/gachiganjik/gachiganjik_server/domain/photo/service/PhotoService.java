@@ -5,12 +5,17 @@ import com.gachiganjik.gachiganjik_server.common.exception.ErrorCode;
 import com.gachiganjik.gachiganjik_server.domain.album.entity.*;
 import com.gachiganjik.gachiganjik_server.domain.album.repository.AlbumMemberRepository;
 import com.gachiganjik.gachiganjik_server.domain.album.repository.AlbumRepository;
+import com.gachiganjik.gachiganjik_server.domain.comment.entity.ReactionType;
+import com.gachiganjik.gachiganjik_server.domain.comment.repository.PhotoReactionRepository;
 import com.gachiganjik.gachiganjik_server.domain.photo.dto.PhotoDto;
 import com.gachiganjik.gachiganjik_server.domain.photo.entity.*;
 import com.gachiganjik.gachiganjik_server.domain.photo.repository.MomentRepository;
 import com.gachiganjik.gachiganjik_server.domain.photo.repository.PhotoRepository;
 import com.gachiganjik.gachiganjik_server.domain.user.entity.UserInfo;
 import com.gachiganjik.gachiganjik_server.domain.user.repository.UserInfoRepository;
+import com.gachiganjik.gachiganjik_server.domain.comment.entity.CommentStatus;
+import com.gachiganjik.gachiganjik_server.domain.comment.repository.CommentRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,6 +37,8 @@ public class PhotoService {
     private final AlbumRepository albumRepository;
     private final AlbumMemberRepository albumMemberRepository;
     private final UserInfoRepository userInfoRepository;
+    private final PhotoReactionRepository photoReactionRepository;
+    private final CommentRepository commentRepository;
 
     @Transactional
     public PhotoDto.PhotoUploadResponse uploadPhotos(Long userId, Long albumId, PhotoDto.PhotoUploadRequest request) {
@@ -41,7 +48,7 @@ public class PhotoService {
 
         Album album = findActiveAlbum(albumId);
         UserInfo uploader = findUser(userId);
-        findActiveMember(album, uploader); // 멤버 검증
+        findActiveMember(album, uploader);
 
         LocalDate photoDate = request.photoDate() != null
                 ? LocalDate.parse(request.photoDate())
@@ -66,13 +73,15 @@ public class PhotoService {
                 .toList();
 
         return new PhotoDto.PhotoUploadResponse(
-                saved.stream().map(PhotoDto.PhotoSummary::of).toList()
+                saved.stream()
+                        .map(p -> PhotoDto.PhotoSummary.of(p, 0, 0, false))
+                        .toList()
         );
     }
 
     public PhotoDto.PhotoListResponse getPhotos(Long userId, Long albumId, int page, int size) {
         Album album = findActiveAlbum(albumId);
-        findActiveMember(album, findUser(userId)); // 멤버 검증
+        findActiveMember(album, findUser(userId));
 
         Page<Moment> momentPage = momentRepository.findByAlbumAndStatusOrderByMomentDateDesc(
                 album, MomentStatus.ACTIVE, PageRequest.of(page, size)
@@ -83,7 +92,13 @@ public class PhotoService {
                     List<PhotoDto.PhotoSummary> photos = photoRepository
                             .findByMomentAndStatusOrderByUploadDtAsc(moment, PhotoStatus.ACTIVE)
                             .stream()
-                            .map(PhotoDto.PhotoSummary::of)
+                            .map(p -> PhotoDto.PhotoSummary.of(p,
+                                    photoReactionRepository.countByPhotoIdAndReactionType(
+                                            p.getPhotoId(), ReactionType.LIKE),
+                                    commentRepository.countByPhotoIdAndStatus(
+                                            p.getPhotoId(), CommentStatus.ACTIVE),
+                                    photoReactionRepository.existsByPhotoPhotoIdAndUserInfoUserIdAndReactionType(
+                                            p.getPhotoId(), userId, ReactionType.LIKE)))
                             .toList();
                     return new PhotoDto.MomentResponse(moment.getMomentDate().toString(), photos);
                 })
@@ -94,17 +109,18 @@ public class PhotoService {
 
     public PhotoDto.PhotoDetailResponse getPhotoDetail(Long userId, Long albumId, Long photoId) {
         Album album = findActiveAlbum(albumId);
-        findActiveMember(album, findUser(userId)); // 멤버 검증
+        findActiveMember(album, findUser(userId));
         Photo photo = findActivePhoto(photoId);
         validatePhotoInAlbum(photo, albumId);
-        return PhotoDto.PhotoDetailResponse.of(photo);
+        int likeCount = photoReactionRepository.countByPhotoIdAndReactionType(photo.getPhotoId(), ReactionType.LIKE);
+        return PhotoDto.PhotoDetailResponse.of(photo, likeCount);
     }
 
     @Transactional
     public PhotoDto.PhotoMessageUpdateResponse updateMessage(Long userId, Long albumId, Long photoId,
                                                              PhotoDto.PhotoMessageUpdateRequest request) {
         Album album = findActiveAlbum(albumId);
-        findActiveMember(album, findUser(userId)); // 멤버 검증
+        findActiveMember(album, findUser(userId));
         Photo photo = findActivePhoto(photoId);
         validatePhotoInAlbum(photo, albumId);
 
@@ -138,7 +154,7 @@ public class PhotoService {
 
     public PhotoDto.PhotoDownloadResponse getDownloadUrl(Long userId, Long albumId, Long photoId) {
         Album album = findActiveAlbum(albumId);
-        findActiveMember(album, findUser(userId)); // 멤버 검증
+        findActiveMember(album, findUser(userId));
         Photo photo = findActivePhoto(photoId);
         validatePhotoInAlbum(photo, albumId);
         return PhotoDto.PhotoDownloadResponse.of(photo);

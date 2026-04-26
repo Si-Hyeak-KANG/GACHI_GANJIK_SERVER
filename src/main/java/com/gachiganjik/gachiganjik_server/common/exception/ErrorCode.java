@@ -46,7 +46,8 @@ public enum ErrorCode {
     NOT_PHOTO_OWNER(HttpStatus.FORBIDDEN, "NOT_PHOTO_OWNER", "사진 업로더만 수정할 수 있습니다."),
 
     // 댓글
-    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT_NOT_FOUND", "댓글을 찾을 수 없습니다.");
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT_NOT_FOUND", "댓글을 찾을 수 없습니다."),
+    NOT_COMMENT_OWNER(HttpStatus.FORBIDDEN, "NOT_COMMENT_OWNER", "본인이 작성한 댓글만 삭제할 수 있습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
