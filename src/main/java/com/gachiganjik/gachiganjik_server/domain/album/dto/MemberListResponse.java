@@ -8,6 +8,7 @@ import java.util.List;
 public record MemberListResponse(List<MemberInfo> members) {
 
     public record MemberInfo(
+            String memberId,
             String userId,
             String nickname,
             String userTag,
@@ -20,6 +21,7 @@ public record MemberListResponse(List<MemberInfo> members) {
         List<MemberInfo> infos = members.stream()
                 .filter(m -> m.getUserInfo() != null)
                 .map(m -> new MemberInfo(
+                        String.valueOf(m.getMemberId()),
                         String.valueOf(m.getUserInfo().getUserId()),
                         m.getUserInfo().getNickname(),
                         m.getUserInfo().getRandomId(),

@@ -33,6 +33,8 @@ public enum ErrorCode {
     INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "INVALID_DATE_RANGE", "종료일은 시작일 이후여야 합니다."),
     INVALID_INVITE_CODE(HttpStatus.NOT_FOUND, "INVALID_INVITE_CODE", "유효하지 않은 초대 코드입니다."),
     ALREADY_JOINED(HttpStatus.CONFLICT, "ALREADY_JOINED", "이미 참여한 앨범입니다."),
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", "앨범 멤버를 찾을 수 없습니다."),
+    CANNOT_MANAGE_OWNER(HttpStatus.FORBIDDEN, "CANNOT_MANAGE_OWNER", "OWNER는 관리 대상이 될 수 없습니다."),
 
     // GUEST
     GUEST_KEY_ALREADY_EXISTS(HttpStatus.CONFLICT, "GUEST_KEY_ALREADY_EXISTS", "이미 사용 중인 GUEST ID입니다."),

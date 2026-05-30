@@ -18,4 +18,6 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
 
     @Query("SELECT am FROM AlbumMember am JOIN FETCH am.album a WHERE am.userInfo.userId = :userId AND am.status = 'ACTIVE'")
     List<AlbumMember> findActiveByUserId(Long userId);
+
+    Optional<AlbumMember> findByMemberIdAndAlbumAndStatus(Long memberId, Album album, AlbumMemberStatus status);
 }

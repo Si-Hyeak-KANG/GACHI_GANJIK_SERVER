@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -154,6 +155,58 @@ public class AlbumService {
         List<AlbumMember> members = albumMemberRepository.findByAlbumAndStatus(album, AlbumMemberStatus.ACTIVE);
         return MemberListResponse.of(members);
     }
+
+    @Transactional
+    public MemberRoleUpdateResponse updateMemberRole(Long userId, Long albumId, Long memberId,
+                                                     MemberRoleUpdateRequest request) {
+        Album album = findActiveAlbum(albumId);
+        AlbumMember myMember = findActiveMember(album, findUser(userId));
+
+        if (myMember.getRole() != AlbumRole.OWNER) {
+            throw new BusinessException(ErrorCode.PERMISSION_DENIED);
+        }
+
+        AlbumMember target = albumMemberRepository
+                .findByMemberIdAndAlbumAndStatus(memberId, album, AlbumMemberStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+        if (target.getRole() == AlbumRole.OWNER) {
+            throw new BusinessException(ErrorCode.CANNOT_MANAGE_OWNER);
+        }
+
+        if (request.role() != AlbumRole.ADMIN && request.role() != AlbumRole.MEMBER) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        target.updateRole(request.role());
+        return MemberRoleUpdateResponse.of(target);
+    }
+
+    @Transactional
+    public void kickMember(Long userId, Long albumId, Long memberId) {
+        Album album = findActiveAlbum(albumId);
+        AlbumMember myMember = findActiveMember(album, findUser(userId));
+
+        if (myMember.getRole() != AlbumRole.OWNER && myMember.getRole() != AlbumRole.ADMIN) {
+            throw new BusinessException(ErrorCode.PERMISSION_DENIED);
+        }
+
+        AlbumMember target = albumMemberRepository
+                .findByMemberIdAndAlbumAndStatus(memberId, album, AlbumMemberStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+        if (target.getRole() == AlbumRole.OWNER) {
+            throw new BusinessException(ErrorCode.CANNOT_MANAGE_OWNER);
+        }
+
+        // ADMIN은 ADMIN을 퇴장시킬 수 없음
+        if (myMember.getRole() == AlbumRole.ADMIN && target.getRole() == AlbumRole.ADMIN) {
+            throw new BusinessException(ErrorCode.PERMISSION_DENIED);
+        }
+
+        target.leave();
+    }
+
 
     private void saveCategories(Album album, List<String> categoryNames) {
         if (CollectionUtils.isEmpty(categoryNames)) return;

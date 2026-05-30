@@ -78,4 +78,25 @@ public class AlbumController {
         Long userId = Long.parseLong(userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(albumService.getMembers(userId, albumId)));
     }
+
+    @PatchMapping("/{albumId}/members/{memberId}/role")
+    public ResponseEntity<ApiResponse<MemberRoleUpdateResponse>> updateMemberRole(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long albumId,
+            @PathVariable Long memberId,
+            @Valid @RequestBody MemberRoleUpdateRequest request) {
+        Long userId = Long.parseLong(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(
+                albumService.updateMemberRole(userId, albumId, memberId, request)));
+    }
+
+    @DeleteMapping("/{albumId}/members/{memberId}")
+    public ResponseEntity<ApiResponse<Void>> kickMember(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long albumId,
+            @PathVariable Long memberId) {
+        Long userId = Long.parseLong(userDetails.getUsername());
+        albumService.kickMember(userId, albumId, memberId);
+        return ResponseEntity.ok(ApiResponse.<Void>success());
+    }
 }
