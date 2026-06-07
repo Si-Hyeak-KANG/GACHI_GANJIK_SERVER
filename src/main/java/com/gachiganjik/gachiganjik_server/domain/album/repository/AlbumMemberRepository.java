@@ -4,6 +4,7 @@ import com.gachiganjik.gachiganjik_server.domain.album.entity.Album;
 import com.gachiganjik.gachiganjik_server.domain.album.entity.AlbumMember;
 import com.gachiganjik.gachiganjik_server.domain.album.entity.AlbumMemberStatus;
 import com.gachiganjik.gachiganjik_server.domain.album.entity.AlbumRole;
+import com.gachiganjik.gachiganjik_server.domain.guest.entity.GuestInfo;
 import com.gachiganjik.gachiganjik_server.domain.user.entity.UserInfo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> {
+
     Optional<AlbumMember> findByAlbumAndUserInfoAndStatus(Album album, UserInfo userInfo, AlbumMemberStatus status);
     boolean existsByAlbumAndUserInfoAndStatus(Album album, UserInfo userInfo, AlbumMemberStatus status);
     List<AlbumMember> findByAlbumAndStatus(Album album, AlbumMemberStatus status);
@@ -20,4 +22,7 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
     List<AlbumMember> findActiveByUserId(Long userId);
 
     Optional<AlbumMember> findByMemberIdAndAlbumAndStatus(Long memberId, Album album, AlbumMemberStatus status);
+
+    Optional<AlbumMember> findByAlbumAndGuestInfoAndStatus(Album album, GuestInfo guestInfo, AlbumMemberStatus status);
+    boolean existsByAlbumAndGuestInfoAndStatus(Album album, GuestInfo guestInfo, AlbumMemberStatus status);
 }

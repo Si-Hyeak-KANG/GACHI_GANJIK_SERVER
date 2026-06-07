@@ -1,6 +1,9 @@
 package com.gachiganjik.gachiganjik_server.common.security;
 
 import com.gachiganjik.gachiganjik_server.common.exception.BusinessException;
+import com.gachiganjik.gachiganjik_server.domain.guest.entity.GuestInfo;
+import com.gachiganjik.gachiganjik_server.domain.guest.entity.GuestStatus;
+import com.gachiganjik.gachiganjik_server.domain.guest.repository.GuestInfoRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,13 +24,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
     private final UserDetailsService userDetailsService;
+    private final GuestInfoRepository guestInfoRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String token = resolveToken(request);
+        String guestKey = request.getHeader("X-Guest-Key");
+        if (StringUtils.hasText(guestKey)) {
+            guestInfoRepository.findByGuestKeyAndStatus(guestKey, GuestStatus.ACTIVE)
+                    .ifPresent(guest -> {
+                        GuestPrincipal principal = new GuestPrincipal(
+                                guest.getGuestId(), guest.getGuestKey(), guest.getNickname());
+                        var authentication = new UsernamePasswordAuthenticationToken(
+                                principal, null, principal.getAuthorities());
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    });
+            filterChain.doFilter(request, response);
+            return;
+        }
 
+        String token = resolveToken(request);
         if (StringUtils.hasText(token)) {
             try {
                 jwtProvider.validate(token);

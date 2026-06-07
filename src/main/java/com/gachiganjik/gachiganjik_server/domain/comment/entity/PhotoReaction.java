@@ -1,6 +1,7 @@
 package com.gachiganjik.gachiganjik_server.domain.comment.entity;
 
 import com.gachiganjik.gachiganjik_server.common.auditing.BaseEntity;
+import com.gachiganjik.gachiganjik_server.domain.guest.entity.GuestInfo;
 import com.gachiganjik.gachiganjik_server.domain.photo.entity.Photo;
 import com.gachiganjik.gachiganjik_server.domain.user.entity.UserInfo;
 import jakarta.persistence.*;
@@ -36,14 +37,19 @@ public class PhotoReaction extends BaseEntity {
     @JoinColumn(name = "user_id")
     private UserInfo userInfo;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "guest_id")
+    private GuestInfo guestInfo;
+
     @Column(name = "reaction_type", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private ReactionType reactionType;
 
     @Builder
-    private PhotoReaction(Photo photo, UserInfo userInfo, ReactionType reactionType) {
+    private PhotoReaction(Photo photo, UserInfo userInfo, GuestInfo guestInfo, ReactionType reactionType) {
         this.photo = photo;
         this.userInfo = userInfo;
+        this.guestInfo = guestInfo;
         this.reactionType = reactionType;
     }
 }

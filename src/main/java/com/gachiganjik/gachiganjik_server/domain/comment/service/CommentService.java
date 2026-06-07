@@ -9,6 +9,9 @@ import com.gachiganjik.gachiganjik_server.domain.comment.dto.CommentDto;
 import com.gachiganjik.gachiganjik_server.domain.comment.entity.*;
 import com.gachiganjik.gachiganjik_server.domain.comment.repository.CommentRepository;
 import com.gachiganjik.gachiganjik_server.domain.comment.repository.PhotoReactionRepository;
+import com.gachiganjik.gachiganjik_server.domain.guest.entity.GuestInfo;
+import com.gachiganjik.gachiganjik_server.domain.guest.entity.GuestStatus;
+import com.gachiganjik.gachiganjik_server.domain.guest.repository.GuestInfoRepository;
 import com.gachiganjik.gachiganjik_server.domain.photo.entity.Photo;
 import com.gachiganjik.gachiganjik_server.domain.photo.entity.PhotoStatus;
 import com.gachiganjik.gachiganjik_server.domain.photo.repository.PhotoRepository;
@@ -35,30 +38,18 @@ public class CommentService {
     private final AlbumRepository albumRepository;
     private final AlbumMemberRepository albumMemberRepository;
     private final UserInfoRepository userInfoRepository;
+    private final GuestInfoRepository guestInfoRepository;
+
+    // ──────────────────────────────────────────
+    // MEMBER
+    // ──────────────────────────────────────────
 
     public CommentDto.CommentListResponse getComments(Long userId, Long albumId, Long photoId,
                                                       Long cursor, int size) {
         Album album = findActiveAlbum(albumId);
         findActiveMember(album, findUser(userId));
         Photo photo = findActivePhoto(photoId, albumId);
-
-        int fetchSize = size > 0 ? size : DEFAULT_COMMENT_SIZE;
-        // cursor+1 개 조회해서 hasNext 판별
-        List<Comment> comments = commentRepository.findByPhotoAndStatusWithCursor(
-                photo, CommentStatus.ACTIVE, cursor, PageRequest.of(0, fetchSize + 1));
-
-        boolean hasNext = comments.size() > fetchSize;
-        List<Comment> page = hasNext ? comments.subList(0, fetchSize) : comments;
-
-        String nextCursor = hasNext
-                ? String.valueOf(page.get(page.size() - 1).getCommentId())
-                : null;
-
-        List<CommentDto.CommentInfo> commentInfos = page.stream()
-                .map(c -> CommentDto.CommentInfo.of(c, userId))
-                .toList();
-
-        return new CommentDto.CommentListResponse(commentInfos, nextCursor, hasNext);
+        return buildCommentListResponse(photo, cursor, size, userId);
     }
 
     @Transactional
@@ -82,7 +73,7 @@ public class CommentService {
     public void deleteComment(Long userId, Long albumId, Long photoId, Long commentId) {
         Album album = findActiveAlbum(albumId);
         findActiveMember(album, findUser(userId));
-        findActivePhoto(photoId, albumId); // photo 소속 앨범 검증
+        findActivePhoto(photoId, albumId);
 
         Comment comment = commentRepository.findByCommentIdAndStatus(commentId, CommentStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
@@ -125,8 +116,88 @@ public class CommentService {
     }
 
     // ──────────────────────────────────────────
-    // Private helpers
+    // GUEST
     // ──────────────────────────────────────────
+
+    public CommentDto.CommentListResponse getCommentsAsGuest(Long guestId, Long albumId, Long photoId,
+                                                             Long cursor, int size) {
+        Album album = findActiveAlbum(albumId);
+        GuestInfo guest = findActiveGuest(guestId);
+        findActiveGuestMember(album, guest);
+        Photo photo = findActivePhoto(photoId, albumId);
+        return buildCommentListResponse(photo, cursor, size, null);
+    }
+
+    @Transactional
+    public CommentDto.CommentCreateResponse createCommentAsGuest(Long guestId, Long albumId, Long photoId,
+                                                                 CommentDto.CommentCreateRequest request) {
+        Album album = findActiveAlbum(albumId);
+        GuestInfo guest = findActiveGuest(guestId);
+        findActiveGuestMember(album, guest);
+        Photo photo = findActivePhoto(photoId, albumId);
+
+        Comment comment = commentRepository.save(Comment.builder()
+                .photo(photo)
+                .userInfo(null)
+                .commentText(request.content())
+                .build());
+
+        return CommentDto.CommentCreateResponse.of(comment);
+    }
+
+    @Transactional
+    public CommentDto.ReactionResponse toggleReactionAsGuest(Long guestId, Long albumId, Long photoId,
+                                                             CommentDto.ReactionRequest request) {
+        Album album = findActiveAlbum(albumId);
+        GuestInfo guest = findActiveGuest(guestId);
+        findActiveGuestMember(album, guest);
+        Photo photo = findActivePhoto(photoId, albumId);
+
+        ReactionType reactionType = ReactionType.valueOf(request.reactionType());
+
+        Optional<PhotoReaction> existing = photoReactionRepository
+                .findByPhotoAndGuestInfoAndReactionType(photo, guest, reactionType);
+
+        boolean isLiked;
+        if (existing.isPresent()) {
+            photoReactionRepository.delete(existing.get());
+            isLiked = false;
+        } else {
+            photoReactionRepository.save(PhotoReaction.builder()
+                    .photo(photo)
+                    .guestInfo(guest)
+                    .reactionType(reactionType)
+                    .build());
+            isLiked = true;
+        }
+
+        int likeCount = photoReactionRepository.countByPhotoIdAndReactionType(photoId, ReactionType.LIKE);
+        return new CommentDto.ReactionResponse(isLiked, likeCount);
+    }
+
+    // ──────────────────────────────────────────
+    // Private helpers — 공통
+    // ──────────────────────────────────────────
+
+    private CommentDto.CommentListResponse buildCommentListResponse(Photo photo, Long cursor, int size,
+                                                                    Long currentUserId) {
+        int fetchSize = size > 0 ? size : DEFAULT_COMMENT_SIZE;
+        List<Comment> comments = commentRepository.findByPhotoAndStatusWithCursor(
+                photo, CommentStatus.ACTIVE, cursor, PageRequest.of(0, fetchSize + 1));
+
+        boolean hasNext = comments.size() > fetchSize;
+        List<Comment> page = hasNext ? comments.subList(0, fetchSize) : comments;
+
+        String nextCursor = hasNext
+                ? String.valueOf(page.get(page.size() - 1).getCommentId())
+                : null;
+
+        List<CommentDto.CommentInfo> commentInfos = page.stream()
+                .map(c -> CommentDto.CommentInfo.of(c, currentUserId))
+                .toList();
+
+        return new CommentDto.CommentListResponse(commentInfos, nextCursor, hasNext);
+    }
 
     private Album findActiveAlbum(Long albumId) {
         Album album = albumRepository.findById(albumId)
@@ -143,9 +214,24 @@ public class CommentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_ALBUM_MEMBER));
     }
 
+    private AlbumMember findActiveGuestMember(Album album, GuestInfo guestInfo) {
+        return albumMemberRepository
+                .findByAlbumAndGuestInfoAndStatus(album, guestInfo, AlbumMemberStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_ALBUM_MEMBER));
+    }
+
     private UserInfo findUser(Long userId) {
         return userInfoRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private GuestInfo findActiveGuest(Long guestId) {
+        GuestInfo guest = guestInfoRepository.findById(guestId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.GUEST_NOT_FOUND));
+        if (guest.getStatus() != GuestStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.GUEST_ALREADY_CONVERTED);
+        }
+        return guest;
     }
 
     private Photo findActivePhoto(Long photoId, Long albumId) {

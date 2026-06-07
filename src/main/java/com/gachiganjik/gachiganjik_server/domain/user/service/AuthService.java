@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.gachiganjik.gachiganjik_server.domain.guest.service.GuestService;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Random;
@@ -28,6 +30,7 @@ public class AuthService {
     private final UserSessionRepository userSessionRepository;
     private final JwtProvider jwtProvider;
     private final PasswordEncoder passwordEncoder;
+    private final GuestService guestService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -48,6 +51,10 @@ public class AuthService {
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .build();
         userLoginInfoRepository.save(loginInfo);
+
+        if (StringUtils.hasText(request.guestKey())) {
+            guestService.convertToMember(request.guestKey(), userInfo);
+        }
 
         return issueTokens(userInfo);
     }

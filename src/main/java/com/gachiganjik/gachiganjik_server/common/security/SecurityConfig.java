@@ -1,5 +1,6 @@
 package com.gachiganjik.gachiganjik_server.common.security;
 
+import com.gachiganjik.gachiganjik_server.domain.guest.repository.GuestInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +26,7 @@ public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
     private final UserDetailsServiceImpl userDetailsService;
+    private final GuestInfoRepository guestInfoRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -39,12 +41,13 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/token/refresh",
                                 "/api/v1/auth/social/google",
-                                "/api/v1/guests/register"
+                                "/api/v1/guests/register",
+                                "/api/v1/guests/restore"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtProvider, userDetailsService),
+                        new JwtAuthenticationFilter(jwtProvider, userDetailsService, guestInfoRepository),
                         UsernamePasswordAuthenticationFilter.class
                 );
 

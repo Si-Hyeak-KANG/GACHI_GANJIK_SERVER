@@ -1,5 +1,6 @@
 package com.gachiganjik.gachiganjik_server.domain.album.entity;
 
+import com.gachiganjik.gachiganjik_server.domain.guest.entity.GuestInfo;
 import com.gachiganjik.gachiganjik_server.domain.user.entity.UserInfo;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -29,6 +30,10 @@ public class AlbumMember {
     @JoinColumn(name = "user_id")
     private UserInfo userInfo;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "guest_id")
+    private GuestInfo guestInfo;
+
     @Column(name = "role", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private AlbumRole role;
@@ -41,9 +46,10 @@ public class AlbumMember {
     private AlbumMemberStatus status;
 
     @Builder
-    private AlbumMember(Album album, UserInfo userInfo, AlbumRole role) {
+    private AlbumMember(Album album, UserInfo userInfo, GuestInfo guestInfo, AlbumRole role) {
         this.album = album;
         this.userInfo = userInfo;
+        this.guestInfo = guestInfo;
         this.role = role;
         this.joinedDt = LocalDateTime.now();
         this.status = AlbumMemberStatus.ACTIVE;

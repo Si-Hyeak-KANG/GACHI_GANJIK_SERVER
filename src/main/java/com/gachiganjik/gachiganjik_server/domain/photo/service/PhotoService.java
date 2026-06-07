@@ -5,17 +5,19 @@ import com.gachiganjik.gachiganjik_server.common.exception.ErrorCode;
 import com.gachiganjik.gachiganjik_server.domain.album.entity.*;
 import com.gachiganjik.gachiganjik_server.domain.album.repository.AlbumMemberRepository;
 import com.gachiganjik.gachiganjik_server.domain.album.repository.AlbumRepository;
+import com.gachiganjik.gachiganjik_server.domain.comment.entity.CommentStatus;
 import com.gachiganjik.gachiganjik_server.domain.comment.entity.ReactionType;
+import com.gachiganjik.gachiganjik_server.domain.comment.repository.CommentRepository;
 import com.gachiganjik.gachiganjik_server.domain.comment.repository.PhotoReactionRepository;
+import com.gachiganjik.gachiganjik_server.domain.guest.entity.GuestInfo;
+import com.gachiganjik.gachiganjik_server.domain.guest.entity.GuestStatus;
+import com.gachiganjik.gachiganjik_server.domain.guest.repository.GuestInfoRepository;
 import com.gachiganjik.gachiganjik_server.domain.photo.dto.PhotoDto;
 import com.gachiganjik.gachiganjik_server.domain.photo.entity.*;
 import com.gachiganjik.gachiganjik_server.domain.photo.repository.MomentRepository;
 import com.gachiganjik.gachiganjik_server.domain.photo.repository.PhotoRepository;
 import com.gachiganjik.gachiganjik_server.domain.user.entity.UserInfo;
 import com.gachiganjik.gachiganjik_server.domain.user.repository.UserInfoRepository;
-import com.gachiganjik.gachiganjik_server.domain.comment.entity.CommentStatus;
-import com.gachiganjik.gachiganjik_server.domain.comment.repository.CommentRepository;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -39,6 +41,11 @@ public class PhotoService {
     private final UserInfoRepository userInfoRepository;
     private final PhotoReactionRepository photoReactionRepository;
     private final CommentRepository commentRepository;
+    private final GuestInfoRepository guestInfoRepository;
+
+    // ──────────────────────────────────────────
+    // MEMBER
+    // ──────────────────────────────────────────
 
     @Transactional
     public PhotoDto.PhotoUploadResponse uploadPhotos(Long userId, Long albumId, PhotoDto.PhotoUploadRequest request) {
@@ -54,10 +61,7 @@ public class PhotoService {
                 ? LocalDate.parse(request.photoDate())
                 : LocalDate.now();
 
-        Moment moment = momentRepository.findByAlbumAndMomentDate(album, photoDate)
-                .orElseGet(() -> momentRepository.save(
-                        Moment.builder().album(album).momentDate(photoDate).build()
-                ));
+        Moment moment = findOrCreateMoment(album, photoDate);
 
         List<Photo> saved = request.photos().stream()
                 .map(item -> photoRepository.save(Photo.builder()
@@ -73,38 +77,16 @@ public class PhotoService {
                 .toList();
 
         return new PhotoDto.PhotoUploadResponse(
-                saved.stream()
-                        .map(p -> PhotoDto.PhotoSummary.of(p, 0, 0, false))
-                        .toList()
+                saved.stream().map(p -> PhotoDto.PhotoSummary.of(p, 0, 0, false)).toList()
         );
     }
 
     public PhotoDto.PhotoListResponse getPhotos(Long userId, Long albumId, int page, int size) {
         Album album = findActiveAlbum(albumId);
         findActiveMember(album, findUser(userId));
-
-        Page<Moment> momentPage = momentRepository.findByAlbumAndStatusOrderByMomentDateDesc(
-                album, MomentStatus.ACTIVE, PageRequest.of(page, size)
-        );
-
-        List<PhotoDto.MomentResponse> moments = momentPage.getContent().stream()
-                .map(moment -> {
-                    List<PhotoDto.PhotoSummary> photos = photoRepository
-                            .findByMomentAndStatusOrderByUploadDtAsc(moment, PhotoStatus.ACTIVE)
-                            .stream()
-                            .map(p -> PhotoDto.PhotoSummary.of(p,
-                                    photoReactionRepository.countByPhotoIdAndReactionType(
-                                            p.getPhotoId(), ReactionType.LIKE),
-                                    commentRepository.countByPhotoIdAndStatus(
-                                            p.getPhotoId(), CommentStatus.ACTIVE),
-                                    photoReactionRepository.existsByPhotoPhotoIdAndUserInfoUserIdAndReactionType(
-                                            p.getPhotoId(), userId, ReactionType.LIKE)))
-                            .toList();
-                    return new PhotoDto.MomentResponse(moment.getMomentDate().toString(), photos);
-                })
-                .toList();
-
-        return new PhotoDto.PhotoListResponse(moments, momentPage.hasNext());
+        return buildPhotoListResponse(album, page, size,
+                photoId -> photoReactionRepository.existsByPhotoPhotoIdAndUserInfoUserIdAndReactionType(
+                        photoId, userId, ReactionType.LIKE));
     }
 
     public PhotoDto.PhotoDetailResponse getPhotoDetail(Long userId, Long albumId, Long photoId) {
@@ -161,8 +143,126 @@ public class PhotoService {
     }
 
     // ──────────────────────────────────────────
-    // Private helpers
+    // GUEST
     // ──────────────────────────────────────────
+
+    @Transactional
+    public PhotoDto.PhotoUploadResponse uploadPhotosAsGuest(Long guestId, Long albumId,
+                                                            PhotoDto.PhotoUploadRequest request) {
+        if (request.photos().size() > MAX_PHOTOS_PER_UPLOAD) {
+            throw new BusinessException(ErrorCode.TOO_MANY_FILES);
+        }
+
+        Album album = findActiveAlbum(albumId);
+        GuestInfo guest = findActiveGuest(guestId);
+        findActiveGuestMember(album, guest);
+
+        LocalDate photoDate = request.photoDate() != null
+                ? LocalDate.parse(request.photoDate())
+                : LocalDate.now();
+
+        Moment moment = findOrCreateMoment(album, photoDate);
+
+        List<Photo> saved = request.photos().stream()
+                .map(item -> photoRepository.save(Photo.builder()
+                        .moment(moment)
+                        .album(album)
+                        .uploaderUser(null)
+                        .imageUrl(item.imageUrl())
+                        .thumbnailUrl(item.thumbnailUrl())
+                        .message(item.message())
+                        .photoDate(photoDate)
+                        .colorCode(item.colorCode())
+                        .build()))
+                .toList();
+
+        return new PhotoDto.PhotoUploadResponse(
+                saved.stream().map(p -> PhotoDto.PhotoSummary.of(p, 0, 0, false)).toList()
+        );
+    }
+
+    public PhotoDto.PhotoListResponse getPhotosAsGuest(Long guestId, Long albumId, int page, int size) {
+        Album album = findActiveAlbum(albumId);
+        GuestInfo guest = findActiveGuest(guestId);
+        findActiveGuestMember(album, guest);
+        return buildPhotoListResponse(album, page, size,
+                photoId -> photoReactionRepository.existsByPhotoPhotoIdAndGuestInfoGuestIdAndReactionType(
+                        photoId, guestId, ReactionType.LIKE));
+    }
+
+    public PhotoDto.PhotoDetailResponse getPhotoDetailAsGuest(Long guestId, Long albumId, Long photoId) {
+        Album album = findActiveAlbum(albumId);
+        GuestInfo guest = findActiveGuest(guestId);
+        findActiveGuestMember(album, guest);
+        Photo photo = findActivePhoto(photoId);
+        validatePhotoInAlbum(photo, albumId);
+        int likeCount = photoReactionRepository.countByPhotoIdAndReactionType(photo.getPhotoId(), ReactionType.LIKE);
+        return PhotoDto.PhotoDetailResponse.of(photo, likeCount);
+    }
+
+    @Transactional
+    public void deletePhotoAsGuest(Long guestId, Long albumId, Long photoId) {
+        Album album = findActiveAlbum(albumId);
+        GuestInfo guest = findActiveGuest(guestId);
+        findActiveGuestMember(album, guest);
+        Photo photo = findActivePhoto(photoId);
+        validatePhotoInAlbum(photo, albumId);
+
+        // GUEST는 본인이 업로드한 사진만 삭제 가능 (uploaderUser == null 인 경우 소유권 불명확 → 거부)
+        if (photo.getUploaderUser() != null) {
+            throw new BusinessException(ErrorCode.PERMISSION_DENIED);
+        }
+
+        photo.delete();
+    }
+
+    public PhotoDto.PhotoDownloadResponse getDownloadUrlAsGuest(Long guestId, Long albumId, Long photoId) {
+        Album album = findActiveAlbum(albumId);
+        GuestInfo guest = findActiveGuest(guestId);
+        findActiveGuestMember(album, guest);
+        Photo photo = findActivePhoto(photoId);
+        validatePhotoInAlbum(photo, albumId);
+        return PhotoDto.PhotoDownloadResponse.of(photo);
+    }
+
+    // ──────────────────────────────────────────
+    // Private helpers — 공통
+    // ──────────────────────────────────────────
+
+    @FunctionalInterface
+    private interface IsLikedChecker {
+        boolean check(Long photoId);
+    }
+
+    private PhotoDto.PhotoListResponse buildPhotoListResponse(Album album, int page, int size,
+                                                              IsLikedChecker isLikedChecker) {
+        Page<Moment> momentPage = momentRepository.findByAlbumAndStatusOrderByMomentDateDesc(
+                album, MomentStatus.ACTIVE, PageRequest.of(page, size));
+
+        List<PhotoDto.MomentResponse> moments = momentPage.getContent().stream()
+                .map(moment -> {
+                    List<PhotoDto.PhotoSummary> photos = photoRepository
+                            .findByMomentAndStatusOrderByUploadDtAsc(moment, PhotoStatus.ACTIVE)
+                            .stream()
+                            .map(p -> PhotoDto.PhotoSummary.of(p,
+                                    photoReactionRepository.countByPhotoIdAndReactionType(
+                                            p.getPhotoId(), ReactionType.LIKE),
+                                    commentRepository.countByPhotoIdAndStatus(
+                                            p.getPhotoId(), CommentStatus.ACTIVE),
+                                    isLikedChecker.check(p.getPhotoId())))
+                            .toList();
+                    return new PhotoDto.MomentResponse(moment.getMomentDate().toString(), photos);
+                })
+                .toList();
+
+        return new PhotoDto.PhotoListResponse(moments, momentPage.hasNext());
+    }
+
+    private Moment findOrCreateMoment(Album album, LocalDate photoDate) {
+        return momentRepository.findByAlbumAndMomentDate(album, photoDate)
+                .orElseGet(() -> momentRepository.save(
+                        Moment.builder().album(album).momentDate(photoDate).build()));
+    }
 
     private Album findActiveAlbum(Long albumId) {
         Album album = albumRepository.findById(albumId)
@@ -179,9 +279,24 @@ public class PhotoService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_ALBUM_MEMBER));
     }
 
+    private AlbumMember findActiveGuestMember(Album album, GuestInfo guestInfo) {
+        return albumMemberRepository
+                .findByAlbumAndGuestInfoAndStatus(album, guestInfo, AlbumMemberStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_ALBUM_MEMBER));
+    }
+
     private UserInfo findUser(Long userId) {
         return userInfoRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private GuestInfo findActiveGuest(Long guestId) {
+        GuestInfo guest = guestInfoRepository.findById(guestId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.GUEST_NOT_FOUND));
+        if (guest.getStatus() != GuestStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.GUEST_ALREADY_CONVERTED);
+        }
+        return guest;
     }
 
     private Photo findActivePhoto(Long photoId) {
