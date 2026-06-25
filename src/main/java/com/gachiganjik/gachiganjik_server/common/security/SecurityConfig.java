@@ -41,8 +41,13 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/token/refresh",
                                 "/api/v1/auth/social/google",
+                                "/api/v1/auth/email/send",
+                                "/api/v1/auth/email/verify",
                                 "/api/v1/guests/register",
                                 "/api/v1/guests/restore"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/albums/verify"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

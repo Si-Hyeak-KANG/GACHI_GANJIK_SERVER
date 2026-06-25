@@ -49,6 +49,11 @@ public class AlbumService {
                 .toList();
     }
 
+    public void verifyInviteCode(String inviteCode) {
+        albumRepository.findByInviteCodeAndStatus(inviteCode, AlbumStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INVITE_CODE));
+    }
+
     @Transactional
     public AlbumCreateResponse createAlbum(Long userId, AlbumCreateRequest request) {
         UserInfo userInfo = findUser(userId);

@@ -63,6 +63,12 @@ public class AlbumController {
         return ResponseEntity.ok(ApiResponse.success());
     }
 
+    @GetMapping("/verify")
+    public ResponseEntity<ApiResponse<?>> verifyAlbum(@RequestParam String inviteCode) {
+        albumService.verifyInviteCode(inviteCode);
+        return ResponseEntity.ok(ApiResponse.success());
+    }
+
     @PostMapping("/join")
     public ResponseEntity<ApiResponse<AlbumJoinResponse>> joinAlbum(
             @AuthenticationPrincipal UserDetails userDetails,

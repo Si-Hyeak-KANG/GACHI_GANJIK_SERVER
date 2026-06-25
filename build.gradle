@@ -60,6 +60,12 @@ dependencies {
     // dotenv
     implementation 'me.paulschwarz:springboot4-dotenv'
 
+    // Mail
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
     // DevTools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 

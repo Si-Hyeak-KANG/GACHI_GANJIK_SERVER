@@ -49,7 +49,11 @@ public enum ErrorCode {
 
     // 댓글
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT_NOT_FOUND", "댓글을 찾을 수 없습니다."),
-    NOT_COMMENT_OWNER(HttpStatus.FORBIDDEN, "NOT_COMMENT_OWNER", "본인이 작성한 댓글만 삭제할 수 있습니다.");
+    NOT_COMMENT_OWNER(HttpStatus.FORBIDDEN, "NOT_COMMENT_OWNER", "본인이 작성한 댓글만 삭제할 수 있습니다."),
+
+    // 이메일 인증
+    EMAIL_VERIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "EMAIL_VERIFICATION_NOT_FOUND", "인증 코드가 존재하지 않거나 만료되었습니다."),
+    EMAIL_VERIFICATION_INVALID(HttpStatus.BAD_REQUEST, "EMAIL_VERIFICATION_INVALID", "인증 코드가 올바르지 않습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

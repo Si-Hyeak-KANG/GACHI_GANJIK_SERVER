@@ -17,6 +17,19 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
         default_batch_fetch_size: 100
+  mail:
+    host: localhost
+    port: 25
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
 jwt:
   secret: ${JWT_SECRET}
@@ -25,3 +38,7 @@ jwt:
 
 google:
   client-id: ${GOOGLE_CLIENT_ID}
+
+email:
+  verification:
+    code-expiration-seconds: 180
