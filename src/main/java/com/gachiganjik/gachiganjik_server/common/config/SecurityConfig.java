@@ -1,5 +1,8 @@
-package com.gachiganjik.gachiganjik_server.common.security;
+package com.gachiganjik.gachiganjik_server.common.config;
 
+import com.gachiganjik.gachiganjik_server.common.security.JwtAuthenticationFilter;
+import com.gachiganjik.gachiganjik_server.common.security.JwtProvider;
+import com.gachiganjik.gachiganjik_server.common.security.UserDetailsServiceImpl;
 import com.gachiganjik.gachiganjik_server.domain.guest.repository.GuestInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -49,6 +52,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/albums/verify"
                         ).permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(

@@ -1,4 +1,4 @@
-package com.gachiganjik.gachiganjik_server.common.security;
+package com.gachiganjik.gachiganjik_server.common.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;

@@ -5,6 +5,7 @@ import com.gachiganjik.gachiganjik_server.common.exception.ErrorCode;
 import com.gachiganjik.gachiganjik_server.domain.album.entity.*;
 import com.gachiganjik.gachiganjik_server.domain.album.repository.AlbumMemberRepository;
 import com.gachiganjik.gachiganjik_server.domain.album.repository.AlbumRepository;
+import com.gachiganjik.gachiganjik_server.domain.album.service.AlbumEventPublisher;
 import com.gachiganjik.gachiganjik_server.domain.comment.entity.CommentStatus;
 import com.gachiganjik.gachiganjik_server.domain.comment.entity.ReactionType;
 import com.gachiganjik.gachiganjik_server.domain.comment.repository.CommentRepository;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -42,6 +44,7 @@ public class PhotoService {
     private final PhotoReactionRepository photoReactionRepository;
     private final CommentRepository commentRepository;
     private final GuestInfoRepository guestInfoRepository;
+    private final AlbumEventPublisher albumEventPublisher;
 
     // ──────────────────────────────────────────
     // MEMBER
@@ -75,6 +78,11 @@ public class PhotoService {
                         .colorCode(item.colorCode())
                         .build()))
                 .toList();
+
+        LocalDateTime uploadedAt = LocalDateTime.now();
+        album.updateLastPhotoUploadedAt(uploadedAt);
+        int totalPhotoCount = photoRepository.countByAlbumAndStatus(albumId, PhotoStatus.ACTIVE);
+        albumEventPublisher.publishPhotoUploaded(albumId, uploader.getNickname(), totalPhotoCount, uploadedAt);
 
         return new PhotoDto.PhotoUploadResponse(
                 saved.stream().map(p -> PhotoDto.PhotoSummary.of(p, 0, 0, false)).toList()
@@ -155,7 +163,7 @@ public class PhotoService {
 
         Album album = findActiveAlbum(albumId);
         GuestInfo guest = findActiveGuest(guestId);
-        findActiveGuestMember(album, guest);
+        validateGuestMembership(album, guest);
 
         LocalDate photoDate = request.photoDate() != null
                 ? LocalDate.parse(request.photoDate())
@@ -176,6 +184,11 @@ public class PhotoService {
                         .build()))
                 .toList();
 
+        LocalDateTime uploadedAt = LocalDateTime.now();
+        album.updateLastPhotoUploadedAt(uploadedAt);
+        int totalPhotoCount = photoRepository.countByAlbumAndStatus(albumId, PhotoStatus.ACTIVE);
+        albumEventPublisher.publishPhotoUploaded(albumId, guest.getNickname(), totalPhotoCount, uploadedAt);
+
         return new PhotoDto.PhotoUploadResponse(
                 saved.stream().map(p -> PhotoDto.PhotoSummary.of(p, 0, 0, false)).toList()
         );
@@ -184,7 +197,7 @@ public class PhotoService {
     public PhotoDto.PhotoListResponse getPhotosAsGuest(Long guestId, Long albumId, int page, int size) {
         Album album = findActiveAlbum(albumId);
         GuestInfo guest = findActiveGuest(guestId);
-        findActiveGuestMember(album, guest);
+        validateGuestMembership(album, guest);
         return buildPhotoListResponse(album, page, size,
                 photoId -> photoReactionRepository.existsByPhotoPhotoIdAndGuestInfoGuestIdAndReactionType(
                         photoId, guestId, ReactionType.LIKE));
@@ -193,7 +206,7 @@ public class PhotoService {
     public PhotoDto.PhotoDetailResponse getPhotoDetailAsGuest(Long guestId, Long albumId, Long photoId) {
         Album album = findActiveAlbum(albumId);
         GuestInfo guest = findActiveGuest(guestId);
-        findActiveGuestMember(album, guest);
+        validateGuestMembership(album, guest);
         Photo photo = findActivePhoto(photoId);
         validatePhotoInAlbum(photo, albumId);
         int likeCount = photoReactionRepository.countByPhotoIdAndReactionType(photo.getPhotoId(), ReactionType.LIKE);
@@ -204,11 +217,10 @@ public class PhotoService {
     public void deletePhotoAsGuest(Long guestId, Long albumId, Long photoId) {
         Album album = findActiveAlbum(albumId);
         GuestInfo guest = findActiveGuest(guestId);
-        findActiveGuestMember(album, guest);
+        validateGuestMembership(album, guest);
         Photo photo = findActivePhoto(photoId);
         validatePhotoInAlbum(photo, albumId);
 
-        // GUEST는 본인이 업로드한 사진만 삭제 가능 (uploaderUser == null 인 경우 소유권 불명확 → 거부)
         if (photo.getUploaderUser() != null) {
             throw new BusinessException(ErrorCode.PERMISSION_DENIED);
         }
@@ -219,14 +231,14 @@ public class PhotoService {
     public PhotoDto.PhotoDownloadResponse getDownloadUrlAsGuest(Long guestId, Long albumId, Long photoId) {
         Album album = findActiveAlbum(albumId);
         GuestInfo guest = findActiveGuest(guestId);
-        findActiveGuestMember(album, guest);
+        validateGuestMembership(album, guest);
         Photo photo = findActivePhoto(photoId);
         validatePhotoInAlbum(photo, albumId);
         return PhotoDto.PhotoDownloadResponse.of(photo);
     }
 
     // ──────────────────────────────────────────
-    // Private helpers — 공통
+    // Private helpers
     // ──────────────────────────────────────────
 
     @FunctionalInterface
@@ -279,8 +291,8 @@ public class PhotoService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_ALBUM_MEMBER));
     }
 
-    private AlbumMember findActiveGuestMember(Album album, GuestInfo guestInfo) {
-        return albumMemberRepository
+    private void validateGuestMembership(Album album, GuestInfo guestInfo) {
+        albumMemberRepository
                 .findByAlbumAndGuestInfoAndStatus(album, guestInfo, AlbumMemberStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_ALBUM_MEMBER));
     }

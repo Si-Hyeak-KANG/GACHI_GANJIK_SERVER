@@ -19,7 +19,7 @@ public class GuestInfo extends BaseEntity {
     @Column(name = "guest_id")
     private Long guestId;
 
-    @Column(name = "guest_key", unique = true, nullable = false, length = 20)
+    @Column(name = "guest_key", unique = true, nullable = false, length = 36)
     private String guestKey;
 
     @Column(name = "nickname", nullable = false, length = 50)

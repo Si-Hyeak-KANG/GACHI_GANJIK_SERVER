@@ -20,7 +20,8 @@ public record AlbumDetailResponse(
         int memberCount,
         List<MemberInfo> members,
         String createdAt,
-        String updatedAt
+        String updatedAt,
+        String lastPhotoUploadedAt
 ) {
     public record MemberInfo(
             String userId,
@@ -61,7 +62,8 @@ public record AlbumDetailResponse(
                 memberInfos.size(),
                 memberInfos,
                 album.getCreatedDt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                album.getUpdatedDt() != null ? album.getUpdatedDt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null
+                album.getUpdatedDt() != null ? album.getUpdatedDt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,
+                album.getLastPhotoUploadedAt() != null ? album.getLastPhotoUploadedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null
         );
     }
 }

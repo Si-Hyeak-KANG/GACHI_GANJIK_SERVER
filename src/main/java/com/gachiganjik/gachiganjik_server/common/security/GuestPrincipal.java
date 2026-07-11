@@ -8,7 +8,7 @@ import java.util.Collection;
 import java.util.List;
 
 @Getter
-public class GuestPrincipal implements UserDetails {
+public class GuestPrincipal implements UserDetails, java.security.Principal {
 
     private final Long guestId;
     private final String guestKey;
@@ -34,5 +34,10 @@ public class GuestPrincipal implements UserDetails {
     @Override
     public String getUsername() {
         return "GUEST:" + guestId;
+    }
+
+    @Override
+    public String getName() {
+        return getUsername();
     }
 }

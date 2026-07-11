@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +43,9 @@ public class Album extends BaseEntity {
     @JoinColumn(name = "owner_user_id", nullable = false)
     private UserInfo ownerUser;
 
+    @Column(name = "last_photo_uploaded_at")
+    private LocalDateTime lastPhotoUploadedAt;
+
     @Column(name = "status", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private AlbumStatus status;
@@ -69,6 +73,10 @@ public class Album extends BaseEntity {
         if (eventStartDate != null) this.eventStartDate = eventStartDate;
         if (eventEndDate != null) this.eventEndDate = eventEndDate;
         if (coverImageUrl != null) this.coverImageUrl = coverImageUrl;
+    }
+
+    public void updateLastPhotoUploadedAt(LocalDateTime uploadedAt) {
+        this.lastPhotoUploadedAt = uploadedAt;
     }
 
     public void delete() {

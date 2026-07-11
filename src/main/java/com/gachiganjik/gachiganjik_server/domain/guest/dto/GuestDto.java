@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 public class GuestDto {
 
     public record GuestRegisterRequest(
-            @NotBlank @Size(min = 4, max = 20) String guestKey,
+            @NotBlank @Size(min = 4, max = 36) String guestKey,
             @NotBlank @Size(min = 1, max = 50) String nickname,
             @NotBlank String inviteCode
     ) {}
