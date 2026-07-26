@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -64,7 +65,11 @@ public class PhotoService {
                 ? LocalDate.parse(request.photoDate())
                 : LocalDate.now();
 
-        Moment moment = findOrCreateMoment(album, photoDate);
+        String clientMomentId = request.momentId() != null
+                ? request.momentId()
+                : UUID.randomUUID().toString();
+
+        Moment moment = createMoment(album, clientMomentId, photoDate, request.message());
 
         List<Photo> saved = request.photos().stream()
                 .map(item -> photoRepository.save(Photo.builder()
@@ -169,7 +174,11 @@ public class PhotoService {
                 ? LocalDate.parse(request.photoDate())
                 : LocalDate.now();
 
-        Moment moment = findOrCreateMoment(album, photoDate);
+        String clientMomentId = request.momentId() != null
+                ? request.momentId()
+                : UUID.randomUUID().toString();
+
+        Moment moment = createMoment(album, clientMomentId, photoDate, request.message());
 
         List<Photo> saved = request.photos().stream()
                 .map(item -> photoRepository.save(Photo.builder()
@@ -263,17 +272,27 @@ public class PhotoService {
                                             p.getPhotoId(), CommentStatus.ACTIVE),
                                     isLikedChecker.check(p.getPhotoId())))
                             .toList();
-                    return new PhotoDto.MomentResponse(moment.getMomentDate().toString(), photos);
+                    return new PhotoDto.MomentResponse(
+                            moment.getClientMomentId(),
+                            moment.getMomentDate().toString(),
+                            moment.getMessage(),
+                            photos
+                    );
                 })
                 .toList();
 
         return new PhotoDto.PhotoListResponse(moments, momentPage.hasNext());
     }
 
-    private Moment findOrCreateMoment(Album album, LocalDate photoDate) {
-        return momentRepository.findByAlbumAndMomentDate(album, photoDate)
-                .orElseGet(() -> momentRepository.save(
-                        Moment.builder().album(album).momentDate(photoDate).build()));
+    private Moment createMoment(Album album, String clientMomentId, LocalDate photoDate, String message) {
+        return momentRepository.save(
+                Moment.builder()
+                        .album(album)
+                        .clientMomentId(clientMomentId)
+                        .momentDate(photoDate)
+                        .message(message)
+                        .build()
+        );
     }
 
     private Album findActiveAlbum(Long albumId) {

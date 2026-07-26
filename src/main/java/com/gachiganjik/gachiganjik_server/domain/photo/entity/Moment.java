@@ -13,8 +13,7 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "TB_MOMENT",
-        uniqueConstraints = @UniqueConstraint(name = "uk_album_moment_date", columnNames = {"album_id", "moment_date"}))
+@Table(name = "TB_MOMENT")
 public class Moment extends BaseEntity {
 
     @Id
@@ -26,17 +25,25 @@ public class Moment extends BaseEntity {
     @JoinColumn(name = "album_id", nullable = false)
     private Album album;
 
+    @Column(name = "client_moment_id", nullable = false, length = 36)
+    private String clientMomentId;
+
     @Column(name = "moment_date", nullable = false)
     private LocalDate momentDate;
+
+    @Column(name = "message", length = 100)
+    private String message;
 
     @Column(name = "status", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private MomentStatus status;
 
     @Builder
-    private Moment(Album album, LocalDate momentDate) {
+    private Moment(Album album, String clientMomentId, LocalDate momentDate, String message) {
         this.album = album;
+        this.clientMomentId = clientMomentId;
         this.momentDate = momentDate;
+        this.message = message;
         this.status = MomentStatus.ACTIVE;
     }
 }

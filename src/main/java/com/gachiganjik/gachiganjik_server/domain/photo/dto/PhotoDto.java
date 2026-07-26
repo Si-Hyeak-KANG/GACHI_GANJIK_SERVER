@@ -4,14 +4,13 @@ import com.gachiganjik.gachiganjik_server.domain.photo.entity.Photo;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDate;
 import java.util.List;
 
-// ──────────────────────────────────────────
-// Request
-// ──────────────────────────────────────────
-
 public class PhotoDto {
+
+    // ──────────────────────────────────────────
+    // Request
+    // ──────────────────────────────────────────
 
     public record PhotoUploadItem(
             @NotEmpty String imageUrl,
@@ -22,7 +21,9 @@ public class PhotoDto {
 
     public record PhotoUploadRequest(
             @NotEmpty @Size(max = 10) List<PhotoUploadItem> photos,
-            String photoDate  // yyyy-MM-dd, null 허용 (업로드 일자 사용)
+            String photoDate,       // yyyy-MM-dd, null 허용
+            String momentId,        // client-generated UUID v4
+            String message          // 업로드 배치 공통 메시지
     ) {}
 
     public record PhotoMessageUpdateRequest(
@@ -35,10 +36,12 @@ public class PhotoDto {
 
     public record PhotoSummary(
             String photoId,
+            String momentId,
             String imageUrl,
             String thumbnailUrl,
             String uploaderId,
             String uploaderNickname,
+            String uploaderProfileImageUrl,
             String message,
             String photoDate,
             String colorCode,
@@ -53,12 +56,17 @@ public class PhotoDto {
             String uploaderNickname = photo.getUploaderUser() != null
                     ? photo.getUploaderUser().getNickname()
                     : null;
+            String uploaderProfileImageUrl = photo.getUploaderUser() != null
+                    ? photo.getUploaderUser().getProfileImageUrl()
+                    : null;
             return new PhotoSummary(
                     String.valueOf(photo.getPhotoId()),
+                    photo.getMoment().getClientMomentId(),
                     photo.getImageUrl(),
                     photo.getThumbnailUrl(),
                     uploaderId,
                     uploaderNickname,
+                    uploaderProfileImageUrl,
                     photo.getMessage(),
                     photo.getPhotoDate() != null ? photo.getPhotoDate().toString() : null,
                     photo.getColorCode(),
@@ -70,7 +78,9 @@ public class PhotoDto {
     }
 
     public record MomentResponse(
+            String momentId,
             String date,
+            String comment,
             List<PhotoSummary> photos
     ) {}
 
@@ -90,6 +100,7 @@ public class PhotoDto {
             String thumbnailUrl,
             String uploaderId,
             String uploaderNickname,
+            String uploaderProfileImageUrl,
             String message,
             String photoDate,
             String colorCode,
@@ -103,6 +114,9 @@ public class PhotoDto {
             String uploaderNickname = photo.getUploaderUser() != null
                     ? photo.getUploaderUser().getNickname()
                     : null;
+            String uploaderProfileImageUrl = photo.getUploaderUser() != null
+                    ? photo.getUploaderUser().getProfileImageUrl()
+                    : null;
             return new PhotoDetailResponse(
                     String.valueOf(photo.getPhotoId()),
                     String.valueOf(photo.getAlbum().getAlbumId()),
@@ -110,6 +124,7 @@ public class PhotoDto {
                     photo.getThumbnailUrl(),
                     uploaderId,
                     uploaderNickname,
+                    uploaderProfileImageUrl,
                     photo.getMessage(),
                     photo.getPhotoDate() != null ? photo.getPhotoDate().toString() : null,
                     photo.getColorCode(),

@@ -7,12 +7,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.time.LocalDate;
 import java.util.Optional;
 
 public interface MomentRepository extends JpaRepository<Moment, Long> {
 
-    Optional<Moment> findByAlbumAndMomentDate(Album album, LocalDate momentDate);
+    Optional<Moment> findByAlbumAndClientMomentId(Album album, String clientMomentId);
 
     Page<Moment> findByAlbumAndStatusOrderByMomentDateDesc(Album album, MomentStatus status, Pageable pageable);
 }
