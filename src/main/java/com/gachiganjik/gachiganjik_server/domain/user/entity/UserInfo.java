@@ -27,15 +27,29 @@ public class UserInfo extends BaseEntity {
     @Column(name = "random_id", unique = true, length = 20)
     private String randomId;
 
+    /** 프로필/알림용. 계정 매칭에는 사용하지 않는다. */
+    @Column(name = "phone", unique = true, length = 20)
+    private String phone;
+
+    /**
+     * 계정 병합 키. 소유가 검증된 이메일만 저장한다.
+     * 미검증이면 null 로 둔다. MySQL UNIQUE 는 NULL 중복을 허용하므로 충돌하지 않는다.
+     */
+    @Column(name = "email", unique = true, length = 100)
+    private String email;
+
     @Column(name = "status", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private UserStatus status;
 
     @Builder
-    private UserInfo(String nickname, String profileImageUrl, String randomId) {
+    private UserInfo(String nickname, String profileImageUrl, String randomId,
+                     String phone, String email) {
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
         this.randomId = randomId;
+        this.phone = phone;
+        this.email = email;
         this.status = UserStatus.ACTIVE;
     }
 

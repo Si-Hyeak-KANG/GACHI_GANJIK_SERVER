@@ -10,7 +10,7 @@ spring:
   jpa:
     defer-datasource-initialization: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
@@ -37,8 +37,15 @@ jwt:
   refresh-token-expiration: 604800000
 
 google:
-  client-id: ${GOOGLE_CLIENT_ID}
+  client-ids: ${GOOGLE_CLIENT_IDS}
 
 email:
   verification:
     code-expiration-seconds: 180
+    verified-ttl-seconds: 1800
+
+social:
+  signup-ticket:
+    ttl-seconds: 600
+  link-ticket:
+    ttl-seconds: 600

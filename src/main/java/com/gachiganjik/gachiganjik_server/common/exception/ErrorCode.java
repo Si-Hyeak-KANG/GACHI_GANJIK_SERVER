@@ -53,7 +53,13 @@ public enum ErrorCode {
 
     // 이메일 인증
     EMAIL_VERIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "EMAIL_VERIFICATION_NOT_FOUND", "인증 코드가 존재하지 않거나 만료되었습니다."),
-    EMAIL_VERIFICATION_INVALID(HttpStatus.BAD_REQUEST, "EMAIL_VERIFICATION_INVALID", "인증 코드가 올바르지 않습니다.");
+    EMAIL_VERIFICATION_INVALID(HttpStatus.BAD_REQUEST, "EMAIL_VERIFICATION_INVALID", "인증 코드가 올바르지 않습니다."),
+
+    // 소셜 로그인
+    SIGNUP_TICKET_NOT_FOUND(HttpStatus.UNAUTHORIZED, "SIGNUP_TICKET_NOT_FOUND", "가입 정보가 만료되었습니다. 다시 시도해 주세요."),
+    SOCIAL_PROVIDER_CONFLICT(HttpStatus.CONFLICT, "SOCIAL_PROVIDER_CONFLICT", "해당 번호로 이미 연결된 소셜 계정이 있습니다."),
+    LINK_TICKET_NOT_FOUND(HttpStatus.UNAUTHORIZED, "LINK_TICKET_NOT_FOUND", "연결 정보가 만료되었습니다. 다시 시도해 주세요."),
+    EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "EMAIL_NOT_VERIFIED", "이메일 인증이 필요합니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

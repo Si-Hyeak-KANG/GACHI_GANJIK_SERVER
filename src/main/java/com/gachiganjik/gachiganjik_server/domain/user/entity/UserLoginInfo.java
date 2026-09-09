@@ -10,8 +10,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "TB_USER_LOGIN_INFO",
-        uniqueConstraints = @UniqueConstraint(name = "uk_email_login_type", columnNames = {"email", "login_type"}))
+@Table(name = "TB_USER_LOGIN_INFO")
 public class UserLoginInfo extends BaseEntity {
 
     @Id
@@ -27,7 +26,7 @@ public class UserLoginInfo extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private LoginType loginType;
 
-    @Column(name = "email", nullable = false, length = 100)
+    @Column(name = "email", length = 100)
     private String email;
 
     @Column(name = "password_hash", length = 255)

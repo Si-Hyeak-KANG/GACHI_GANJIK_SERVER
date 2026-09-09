@@ -38,3 +38,5 @@ out/
 
 .env
 application-prod.yml
+.DS_Store
+secrets/

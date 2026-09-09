@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -34,7 +35,7 @@ public class JwtProvider {
     }
 
     public String generateRefreshToken(Long userId) {
-        return generateToken(userId, refreshTokenExpiration);
+        return generateToken(userId, refreshTokenExpiration, UUID.randomUUID().toString());
     }
 
     public Long getUserId(String token) {
@@ -46,13 +47,21 @@ public class JwtProvider {
     }
 
     private String generateToken(Long userId, long expiration) {
+        return generateToken(userId, expiration, null);
+    }
+
+    private String generateToken(Long userId, long expiration, String jwtId) {
         Date now = new Date();
-        return Jwts.builder()
+        JwtBuilder builder = Jwts.builder()
                 .subject(String.valueOf(userId))
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + expiration))
-                .signWith(secretKey)
-                .compact();
+                .signWith(secretKey);
+
+        if (jwtId != null) {
+            builder.id(jwtId);
+        }
+        return builder.compact();
     }
 
     private Claims getClaims(String token) {
