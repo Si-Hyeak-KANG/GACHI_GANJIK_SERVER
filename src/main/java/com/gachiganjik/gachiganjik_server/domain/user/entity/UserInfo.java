@@ -58,7 +58,14 @@ public class UserInfo extends BaseEntity {
         if (profileImageUrl != null) this.profileImageUrl = profileImageUrl;
     }
 
+    /**
+     * 회원 탈퇴 처리. UNIQUE 제약(email/phone/randomId)은 유지하되 값을 비워
+     * 동일 식별자로 재가입이 가능해지고, 탈퇴 계정으로의 소셜 재연결을 방지한다(ADR-017).
+     */
     public void withdraw() {
         this.status = UserStatus.DELETED;
+        this.email = null;
+        this.phone = null;
+        this.randomId = null;
     }
 }

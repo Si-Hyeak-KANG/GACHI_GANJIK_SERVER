@@ -53,4 +53,14 @@ public class UserLoginInfo extends BaseEntity {
     public void updatePassword(String newPasswordHash) {
         this.passwordHash = newPasswordHash;
     }
+
+    /**
+     * 회원 탈퇴 시 이메일을 익명화한다. UserInfo.email 만 비우면
+     * AuthService#register / EmailVerificationService 의 중복 확인이 이 테이블의
+     * email 을 그대로 조회하므로 재가입이 계속 막힌다. UNIQUE 제약이 없는 컬럼이라
+     * null 처리에 충돌 위험은 없다(ADR-017).
+     */
+    public void anonymizeEmail() {
+        this.email = null;
+    }
 }

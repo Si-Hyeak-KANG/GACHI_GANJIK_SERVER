@@ -35,6 +35,7 @@ public enum ErrorCode {
     ALREADY_JOINED(HttpStatus.CONFLICT, "ALREADY_JOINED", "이미 참여한 앨범입니다."),
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", "앨범 멤버를 찾을 수 없습니다."),
     CANNOT_MANAGE_OWNER(HttpStatus.FORBIDDEN, "CANNOT_MANAGE_OWNER", "OWNER는 관리 대상이 될 수 없습니다."),
+    OWNER_CANNOT_WITHDRAW(HttpStatus.FORBIDDEN, "OWNER_CANNOT_WITHDRAW", "OWNER인 앨범이 있어 탈퇴할 수 없습니다. 소유권을 이전한 뒤 다시 시도해 주세요."),
 
     // GUEST
     GUEST_KEY_ALREADY_EXISTS(HttpStatus.CONFLICT, "GUEST_KEY_ALREADY_EXISTS", "이미 사용 중인 GUEST ID입니다."),

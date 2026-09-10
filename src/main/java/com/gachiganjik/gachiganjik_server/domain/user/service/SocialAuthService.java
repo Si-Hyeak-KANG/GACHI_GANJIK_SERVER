@@ -13,6 +13,7 @@ import com.gachiganjik.gachiganjik_server.domain.user.entity.LoginType;
 import com.gachiganjik.gachiganjik_server.domain.user.entity.SignupTicket;
 import com.gachiganjik.gachiganjik_server.domain.user.entity.UserInfo;
 import com.gachiganjik.gachiganjik_server.domain.user.entity.UserLoginInfo;
+import com.gachiganjik.gachiganjik_server.domain.user.entity.UserStatus;
 import com.gachiganjik.gachiganjik_server.domain.user.repository.LinkTicketRepository;
 import com.gachiganjik.gachiganjik_server.domain.user.repository.SignupTicketRepository;
 import com.gachiganjik.gachiganjik_server.domain.user.repository.UserInfoRepository;
@@ -157,6 +158,11 @@ public class SocialAuthService {
     }
 
     private SocialLoginResponse loginExistingUser(UserLoginInfo loginInfo, SocialUserProfile profile) {
+        // 탈퇴(DELETED) 처리된 계정으로의 로그인 시도는 거부한다(ADR-019).
+        if (loginInfo.getUserInfo().getStatus() == UserStatus.DELETED) {
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+        }
+
         loginInfo.getUserInfo().updateProfile(null, profile.profileImageUrl());
 
         return SocialLoginResponse.existingUser(

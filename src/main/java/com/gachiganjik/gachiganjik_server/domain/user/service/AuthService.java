@@ -3,6 +3,9 @@ package com.gachiganjik.gachiganjik_server.domain.user.service;
 import com.gachiganjik.gachiganjik_server.common.exception.BusinessException;
 import com.gachiganjik.gachiganjik_server.common.exception.ErrorCode;
 import com.gachiganjik.gachiganjik_server.common.security.JwtProvider;
+import com.gachiganjik.gachiganjik_server.domain.album.entity.AlbumMemberStatus;
+import com.gachiganjik.gachiganjik_server.domain.album.entity.AlbumRole;
+import com.gachiganjik.gachiganjik_server.domain.album.repository.AlbumMemberRepository;
 import com.gachiganjik.gachiganjik_server.domain.guest.service.GuestService;
 import com.gachiganjik.gachiganjik_server.domain.user.dto.*;
 import com.gachiganjik.gachiganjik_server.domain.user.entity.*;
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
@@ -35,6 +39,7 @@ public class AuthService {
     private final UserSessionRepository userSessionRepository;
     private final VerifiedEmailRepository verifiedEmailRepository;
     private final LinkTicketRepository linkTicketRepository;
+    private final AlbumMemberRepository albumMemberRepository;
     private final JwtProvider jwtProvider;
     private final PasswordEncoder passwordEncoder;
     private final GuestService guestService;
@@ -126,6 +131,11 @@ public class AuthService {
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
 
+        // 탈퇴(DELETED) 처리된 계정으로의 로그인 시도는 거부한다(ADR-019).
+        if (loginInfo.getUserInfo().getStatus() == UserStatus.DELETED) {
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+        }
+
         return issueTokens(loginInfo.getUserInfo());
     }
 
@@ -156,6 +166,30 @@ public class AuthService {
 
     @Transactional
     public void logout(Long userId) {
+        userSessionRepository.logoutAllByUserIdAndStatus(userId, UserSessionStatus.ACTIVE);
+    }
+
+    /**
+     * 회원 탈퇴.
+     * - 요청자가 OWNER 역할인 앨범이 하나라도 있으면 거부한다(ADR-018).
+     * - status 를 DELETED 로 바꾸고 email/phone/randomId, 로그인 수단의 email 을 익명화한다(ADR-017).
+     * - logout 과 동일하게 모든 세션(리프레시 토큰)을 무효화한다(ADR-019).
+     */
+    @Transactional
+    public void withdraw(Long userId) {
+        UserInfo userInfo = userInfoRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (albumMemberRepository.existsByUserInfo_UserIdAndRoleAndStatus(
+                userId, AlbumRole.OWNER, AlbumMemberStatus.ACTIVE)) {
+            throw new BusinessException(ErrorCode.OWNER_CANNOT_WITHDRAW);
+        }
+
+        List<UserLoginInfo> loginInfos = userLoginInfoRepository.findAllByUserInfo(userInfo);
+        loginInfos.forEach(UserLoginInfo::anonymizeEmail);
+
+        userInfo.withdraw();
+
         userSessionRepository.logoutAllByUserIdAndStatus(userId, UserSessionStatus.ACTIVE);
     }
 

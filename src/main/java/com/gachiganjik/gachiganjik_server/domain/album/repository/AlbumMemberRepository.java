@@ -25,4 +25,6 @@ public interface AlbumMemberRepository extends JpaRepository<AlbumMember, Long> 
 
     Optional<AlbumMember> findByAlbumAndGuestInfoAndStatus(Album album, GuestInfo guestInfo, AlbumMemberStatus status);
     boolean existsByAlbumAndGuestInfoAndStatus(Album album, GuestInfo guestInfo, AlbumMemberStatus status);
+
+    boolean existsByUserInfo_UserIdAndRoleAndStatus(Long userId, AlbumRole role, AlbumMemberStatus status);
 }

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -45,6 +46,16 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<?>> logout(@AuthenticationPrincipal UserDetails userDetails) {
         authService.logout(Long.parseLong(userDetails.getUsername()));
+        return ResponseEntity.ok(ApiResponse.success());
+    }
+
+    /**
+     * 회원 탈퇴. 요청자가 OWNER인 앨범이 있으면 거부한다(ADR-018).
+     * 통과하면 식별자를 익명화하고(ADR-017) 모든 세션을 무효화한다(ADR-019).
+     */
+    @DeleteMapping("/withdraw")
+    public ResponseEntity<ApiResponse<?>> withdraw(@AuthenticationPrincipal UserDetails userDetails) {
+        authService.withdraw(Long.parseLong(userDetails.getUsername()));
         return ResponseEntity.ok(ApiResponse.success());
     }
 
