@@ -6,10 +6,6 @@ import com.gachiganjik.gachiganjik_server.domain.album.entity.*;
 import com.gachiganjik.gachiganjik_server.domain.album.repository.AlbumMemberRepository;
 import com.gachiganjik.gachiganjik_server.domain.album.repository.AlbumRepository;
 import com.gachiganjik.gachiganjik_server.domain.album.service.AlbumEventPublisher;
-import com.gachiganjik.gachiganjik_server.domain.comment.entity.CommentStatus;
-import com.gachiganjik.gachiganjik_server.domain.comment.entity.ReactionType;
-import com.gachiganjik.gachiganjik_server.domain.comment.repository.CommentRepository;
-import com.gachiganjik.gachiganjik_server.domain.comment.repository.PhotoReactionRepository;
 import com.gachiganjik.gachiganjik_server.domain.guest.entity.GuestInfo;
 import com.gachiganjik.gachiganjik_server.domain.guest.entity.GuestStatus;
 import com.gachiganjik.gachiganjik_server.domain.guest.repository.GuestInfoRepository;
@@ -42,8 +38,6 @@ public class PhotoService {
     private final AlbumRepository albumRepository;
     private final AlbumMemberRepository albumMemberRepository;
     private final UserInfoRepository userInfoRepository;
-    private final PhotoReactionRepository photoReactionRepository;
-    private final CommentRepository commentRepository;
     private final GuestInfoRepository guestInfoRepository;
     private final AlbumEventPublisher albumEventPublisher;
 
@@ -90,16 +84,14 @@ public class PhotoService {
         albumEventPublisher.publishPhotoUploaded(albumId, uploader.getNickname(), totalPhotoCount, uploadedAt);
 
         return new PhotoDto.PhotoUploadResponse(
-                saved.stream().map(p -> PhotoDto.PhotoSummary.of(p, 0, 0, false)).toList()
+                saved.stream().map(PhotoDto.PhotoSummary::of).toList()
         );
     }
 
     public PhotoDto.PhotoListResponse getPhotos(Long userId, Long albumId, int page, int size) {
         Album album = findActiveAlbum(albumId);
         findActiveMember(album, findUser(userId));
-        return buildPhotoListResponse(album, page, size,
-                photoId -> photoReactionRepository.existsByPhotoPhotoIdAndUserInfoUserIdAndReactionType(
-                        photoId, userId, ReactionType.LIKE));
+        return buildPhotoListResponse(album, page, size);
     }
 
     public PhotoDto.PhotoDetailResponse getPhotoDetail(Long userId, Long albumId, Long photoId) {
@@ -107,8 +99,7 @@ public class PhotoService {
         findActiveMember(album, findUser(userId));
         Photo photo = findActivePhoto(photoId);
         validatePhotoInAlbum(photo, albumId);
-        int likeCount = photoReactionRepository.countByPhotoIdAndReactionType(photo.getPhotoId(), ReactionType.LIKE);
-        return PhotoDto.PhotoDetailResponse.of(photo, likeCount);
+        return PhotoDto.PhotoDetailResponse.of(photo);
     }
 
     @Transactional
@@ -199,7 +190,7 @@ public class PhotoService {
         albumEventPublisher.publishPhotoUploaded(albumId, guest.getNickname(), totalPhotoCount, uploadedAt);
 
         return new PhotoDto.PhotoUploadResponse(
-                saved.stream().map(p -> PhotoDto.PhotoSummary.of(p, 0, 0, false)).toList()
+                saved.stream().map(PhotoDto.PhotoSummary::of).toList()
         );
     }
 
@@ -207,9 +198,7 @@ public class PhotoService {
         Album album = findActiveAlbum(albumId);
         GuestInfo guest = findActiveGuest(guestId);
         validateGuestMembership(album, guest);
-        return buildPhotoListResponse(album, page, size,
-                photoId -> photoReactionRepository.existsByPhotoPhotoIdAndGuestInfoGuestIdAndReactionType(
-                        photoId, guestId, ReactionType.LIKE));
+        return buildPhotoListResponse(album, page, size);
     }
 
     public PhotoDto.PhotoDetailResponse getPhotoDetailAsGuest(Long guestId, Long albumId, Long photoId) {
@@ -218,8 +207,7 @@ public class PhotoService {
         validateGuestMembership(album, guest);
         Photo photo = findActivePhoto(photoId);
         validatePhotoInAlbum(photo, albumId);
-        int likeCount = photoReactionRepository.countByPhotoIdAndReactionType(photo.getPhotoId(), ReactionType.LIKE);
-        return PhotoDto.PhotoDetailResponse.of(photo, likeCount);
+        return PhotoDto.PhotoDetailResponse.of(photo);
     }
 
     @Transactional
@@ -250,13 +238,7 @@ public class PhotoService {
     // Private helpers
     // ──────────────────────────────────────────
 
-    @FunctionalInterface
-    private interface IsLikedChecker {
-        boolean check(Long photoId);
-    }
-
-    private PhotoDto.PhotoListResponse buildPhotoListResponse(Album album, int page, int size,
-                                                              IsLikedChecker isLikedChecker) {
+    private PhotoDto.PhotoListResponse buildPhotoListResponse(Album album, int page, int size) {
         Page<Moment> momentPage = momentRepository.findByAlbumAndStatusOrderByMomentDateDesc(
                 album, MomentStatus.ACTIVE, PageRequest.of(page, size));
 
@@ -265,12 +247,7 @@ public class PhotoService {
                     List<PhotoDto.PhotoSummary> photos = photoRepository
                             .findByMomentAndStatusOrderByUploadDtAsc(moment, PhotoStatus.ACTIVE)
                             .stream()
-                            .map(p -> PhotoDto.PhotoSummary.of(p,
-                                    photoReactionRepository.countByPhotoIdAndReactionType(
-                                            p.getPhotoId(), ReactionType.LIKE),
-                                    commentRepository.countByPhotoIdAndStatus(
-                                            p.getPhotoId(), CommentStatus.ACTIVE),
-                                    isLikedChecker.check(p.getPhotoId())))
+                            .map(PhotoDto.PhotoSummary::of)
                             .toList();
                     return new PhotoDto.MomentResponse(
                             moment.getClientMomentId(),

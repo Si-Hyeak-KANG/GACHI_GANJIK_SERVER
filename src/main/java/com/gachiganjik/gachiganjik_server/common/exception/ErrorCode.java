@@ -47,10 +47,6 @@ public enum ErrorCode {
     TOO_MANY_FILES(HttpStatus.BAD_REQUEST, "TOO_MANY_FILES", "한 번에 최대 10장까지 업로드할 수 있습니다."),
     NOT_PHOTO_OWNER(HttpStatus.FORBIDDEN, "NOT_PHOTO_OWNER", "사진 업로더만 수정할 수 있습니다."),
 
-    // 댓글
-    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT_NOT_FOUND", "댓글을 찾을 수 없습니다."),
-    NOT_COMMENT_OWNER(HttpStatus.FORBIDDEN, "NOT_COMMENT_OWNER", "본인이 작성한 댓글만 삭제할 수 있습니다."),
-
     // 이메일 인증
     EMAIL_VERIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "EMAIL_VERIFICATION_NOT_FOUND", "인증 코드가 존재하지 않거나 만료되었습니다."),
     EMAIL_VERIFICATION_INVALID(HttpStatus.BAD_REQUEST, "EMAIL_VERIFICATION_INVALID", "인증 코드가 올바르지 않습니다."),

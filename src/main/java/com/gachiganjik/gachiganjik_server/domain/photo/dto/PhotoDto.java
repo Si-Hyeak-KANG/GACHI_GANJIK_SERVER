@@ -44,12 +44,9 @@ public class PhotoDto {
             String uploaderProfileImageUrl,
             String message,
             String photoDate,
-            String colorCode,
-            int likeCount,
-            int commentCount,
-            boolean isLiked
+            String colorCode
     ) {
-        public static PhotoSummary of(Photo photo, int likeCount, int commentCount, boolean isLiked) {
+        public static PhotoSummary of(Photo photo) {
             String uploaderId = photo.getUploaderUser() != null
                     ? String.valueOf(photo.getUploaderUser().getUserId())
                     : null;
@@ -69,10 +66,7 @@ public class PhotoDto {
                     uploaderProfileImageUrl,
                     photo.getMessage(),
                     photo.getPhotoDate() != null ? photo.getPhotoDate().toString() : null,
-                    photo.getColorCode(),
-                    likeCount,
-                    commentCount,
-                    isLiked
+                    photo.getColorCode()
             );
         }
     }
@@ -104,10 +98,9 @@ public class PhotoDto {
             String message,
             String photoDate,
             String colorCode,
-            String uploadDt,
-            int likeCount
+            String uploadDt
     ) {
-        public static PhotoDetailResponse of(Photo photo, int likeCount) {
+        public static PhotoDetailResponse of(Photo photo) {
             String uploaderId = photo.getUploaderUser() != null
                     ? String.valueOf(photo.getUploaderUser().getUserId())
                     : null;
@@ -128,8 +121,7 @@ public class PhotoDto {
                     photo.getMessage(),
                     photo.getPhotoDate() != null ? photo.getPhotoDate().toString() : null,
                     photo.getColorCode(),
-                    photo.getUploadDt().toString(),
-                    likeCount
+                    photo.getUploadDt().toString()
             );
         }
     }
