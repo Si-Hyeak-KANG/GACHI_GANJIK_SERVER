@@ -1,5 +1,7 @@
 package com.gachiganjik.gachiganjik_server.common.config;
 
+import com.gachiganjik.gachiganjik_server.common.security.CustomAccessDeniedHandler;
+import com.gachiganjik.gachiganjik_server.common.security.CustomAuthenticationEntryPoint;
 import com.gachiganjik.gachiganjik_server.common.security.JwtAuthenticationFilter;
 import com.gachiganjik.gachiganjik_server.common.security.JwtProvider;
 import com.gachiganjik.gachiganjik_server.common.security.UserDetailsServiceImpl;
@@ -19,6 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
@@ -30,6 +33,7 @@ public class SecurityConfig {
     private final JwtProvider jwtProvider;
     private final UserDetailsServiceImpl userDetailsService;
     private final GuestInfoRepository guestInfoRepository;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -38,6 +42,10 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(new CustomAuthenticationEntryPoint(objectMapper))
+                        .accessDeniedHandler(new CustomAccessDeniedHandler(objectMapper))
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/auth/signup",
