@@ -62,6 +62,34 @@ public class SecurityConfig {
                                 "/api/v1/albums/verify"
                         ).permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        // 계약상 bearerAuth만 선언되고 guestKeyAuth는 선언되지 않은 회원 전용
+                        // 엔드포인트. 게스트(GuestPrincipal, 빈 authorities)는 hasRole("USER")를
+                        // 통과하지 못해 CustomAccessDeniedHandler가 GUEST_NOT_ALLOWED(403)로
+                        // 응답한다(ADR-020, ADR-021).
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/auth/logout",
+                                "/api/v1/users/me/profile-image",
+                                "/api/v1/albums",
+                                "/api/v1/albums/join",
+                                "/api/v1/albums/{albumId}/members/{memberId}/ownership"
+                        ).hasRole("USER")
+                        .requestMatchers(HttpMethod.DELETE,
+                                "/api/v1/auth/withdraw",
+                                "/api/v1/albums/{albumId}",
+                                "/api/v1/albums/{albumId}/members/{memberId}",
+                                "/api/v1/albums/{albumId}/members/me"
+                        ).hasRole("USER")
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/users/me",
+                                "/api/v1/albums",
+                                "/api/v1/albums/{albumId}",
+                                "/api/v1/albums/{albumId}/members"
+                        ).hasRole("USER")
+                        .requestMatchers(HttpMethod.PATCH,
+                                "/api/v1/users/me",
+                                "/api/v1/albums/{albumId}",
+                                "/api/v1/albums/{albumId}/members/{memberId}/role"
+                        ).hasRole("USER")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
