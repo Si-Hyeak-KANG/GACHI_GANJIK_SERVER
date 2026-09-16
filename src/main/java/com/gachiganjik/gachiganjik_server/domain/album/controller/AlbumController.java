@@ -105,4 +105,23 @@ public class AlbumController {
         albumService.kickMember(userId, albumId, memberId);
         return ResponseEntity.ok(ApiResponse.<Void>success());
     }
+
+    @DeleteMapping("/{albumId}/members/me")
+    public ResponseEntity<ApiResponse<Void>> leaveAlbum(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long albumId) {
+        Long userId = Long.parseLong(userDetails.getUsername());
+        albumService.leaveAlbum(userId, albumId);
+        return ResponseEntity.ok(ApiResponse.<Void>success());
+    }
+
+    @PostMapping("/{albumId}/members/{memberId}/ownership")
+    public ResponseEntity<ApiResponse<OwnershipTransferResponse>> transferOwnership(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long albumId,
+            @PathVariable Long memberId) {
+        Long userId = Long.parseLong(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(
+                albumService.transferOwnership(userId, albumId, memberId)));
+    }
 }

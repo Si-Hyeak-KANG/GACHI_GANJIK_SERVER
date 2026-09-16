@@ -212,6 +212,40 @@ public class AlbumService {
         target.leave();
     }
 
+    @Transactional
+    public void leaveAlbum(Long userId, Long albumId) {
+        Album album = findActiveAlbum(albumId);
+        AlbumMember myMember = findActiveMember(album, findUser(userId));
+
+        if (myMember.getRole() == AlbumRole.OWNER) {
+            throw new BusinessException(ErrorCode.OWNER_CANNOT_LEAVE_ALBUM);
+        }
+
+        myMember.leave();
+    }
+
+    @Transactional
+    public OwnershipTransferResponse transferOwnership(Long userId, Long albumId, Long memberId) {
+        Album album = findActiveAlbum(albumId);
+        AlbumMember myMember = findActiveMember(album, findUser(userId));
+
+        if (myMember.getRole() != AlbumRole.OWNER) {
+            throw new BusinessException(ErrorCode.PERMISSION_DENIED);
+        }
+
+        AlbumMember target = albumMemberRepository
+                .findByMemberIdAndAlbumAndStatus(memberId, album, AlbumMemberStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+        target.updateRole(AlbumRole.OWNER);
+        myMember.updateRole(AlbumRole.ADMIN);
+
+        return new OwnershipTransferResponse(
+                OwnershipTransferMemberInfo.of(target),
+                OwnershipTransferMemberInfo.of(myMember)
+        );
+    }
+
 
     private void saveCategories(Album album, List<String> categoryNames) {
         if (CollectionUtils.isEmpty(categoryNames)) return;
